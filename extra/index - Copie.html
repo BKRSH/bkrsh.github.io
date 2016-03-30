@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>TP - Leaflet.js</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="leaflet.css">
+	<script src="leaflet.js"></script>
+    <script src="papaparse.min.js"></script>
+    <script src="jquery-2.2.0.min.js"></script>
+    <style>
+        h1, p {
+            text-align: center;
+        }
+        #map {
+            margin: 100 auto;
+			border-style: solid;
+        }
+        .departement {
+            fill: #888;
+            stroke: #444;
+            stroke-width: 1px;
+        }
+	
+		#tooltip{
+    display: none;
+    z-index: 999;
+    position: absolute;
+    padding: 25px;
+    background-color: #bbb;
+    width: 150px;
+    border: 2px solid #999;
+    border-radius: 25px;
+		}
+    </style>
+</head>
+<body>
+    <h1>TP - Leaflet.js</h1>
+    <p>Source des données : <a href="http://www.insee.fr/fr/themes/tableau.asp?reg_id=99&ref_id=TCRD_025" target="_blank"><code>http://www.insee.fr/fr/themes/tableau.asp?reg_id=99&ref_id=TCRD_025</code></a></p>
+    <p><strong>Information</strong> : <span id="info"></span></p>
+	<div id="tooltip">
+	    <p><strong>Département</strong> : <span id="nom"></span></p>
+        <p><strong>Code</strong> : <span id="code"></span></p>
+        <p><strong>Taux 2014 trim 2</strong> : <span id="txA"></span> %</p>
+        <p><strong>Taux 2015 trim 1</strong> : <span id="txB"></span> %</p>
+        <p><strong>Taux 2015 trim 2</strong> : <span id="txC"></span> %</p>
+		</div>
+	<div id="map" style="width: 400px; height: 500px"></div>
+
+    <script>
+        console.log(L)
+		var map = L.map('map').setView([46.3, 2.3], 5);
+        
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+			minZoom:6,
+        }).addTo(map);
+		
+		
+        
+        Papa.parse("http://fxjollois.github.io/webreporting/tp-leaflet/departements-chomage.tsv", {
+            download: true,
+            header: true,
+            encoding: "utf-8",
+            complete: function(results) {	
+                var chomage = results.data;
+                console.log(chomage);
+                chomage.forEach(function(c) {
+                    c.an14trim2 = +c.an14trim2;
+                    c.an15trim1 = +c.an15trim1;
+                    c.an15trim2 = +c.an15trim2;
+                });
+			
+                $.getJSON("departements.geojson", function (data) {
+                    // on cherche le min et le max pour le chômage (2015 trimestre 2) pour le domaine des couleurs
+                    var maxchomage = chomage.reduce(function(o, n) { if (n.an15trim2 > o.an15trim2) return n; return o; }).an15trim2;
+                    var minchomage = chomage.reduce(function(o, n) { if (n.an15trim2 < o.an15trim2) return n; return o; }).an15trim2;
+					
+					var sum = chomage.reduce(function(o, n) {return {an15trim2: o.an15trim2+n.an15trim2}}).an15trim2;
+					console.log(sum);
+                    // on créé une fonction prenant la valeur du an15trim2 et qui renvoie une couleur (entre blanc (min) et rouge (max))
+                    function couleur (val, min, max) {
+                        var r = 255,
+                            g = Math.floor((1 - (val - min) / (max - min)) * 255),
+                            b = Math.floor((1 - (val - min) / (max - min)) * 255);
+                        return "rgb(" + r + ", " + g + ", " + b + ")";
+                    }
+                    
+                    // Ici, à chaque département, on lui associe les valeurs du chômage
+                    data.features.forEach(function (d) {
+                        var ch = chomage.filter(function(c) { if (c.code === d.properties.code) return true; return false; })[0];
+                        d.properties.an14trim2 = ch.an14trim2;
+                        d.properties.an15trim1 = ch.an15trim1;
+                        d.properties.an15trim2 = ch.an15trim2;
+                    });
+                    				
+					function style(feature) {
+							return {
+								fillColor: couleur(feature.properties.an15trim2, minchomage, maxchomage),
+								fillOpacity: 0.5,
+                                weight: 1,
+                                color: "#000",
+                                opacity: 0.5,
+							};
+						}		
+	
+					function highlightFeature(e) {
+							var layer = e.target;
+							var prop = e.target.feature.properties;
+							var souris = e.originalEvent;
+                           document.getElementById("info").innerHTML = prop.nom + ' (' + prop.code + ')';
+							layer.setStyle({
+								weight: 2,
+								fillColor: couleur(e.target.feature.properties.an15trim2, minchomage, maxchomage),
+								fillOpacity:2
+							})
+							
+							tooltip= document.getElementById("tooltip");
+							tooltip.style.display = "initial";
+							
+							
+							 if (souris.pageY + 125 > window.innerHeight) {
+                                tooltip.style.top = souris.pageY - 250 + "px";
+                            } else {
+                                tooltip.style.top = souris.pageY - 125 + "px";
+                            }
+                            tooltip.style.left = souris.pageX + 10 + "px";
+							
+				
+							
+				
+							
+							
+							};
+							
+					var geojson;
+					
+					function texto(e)
+					{
+							var prop = e.target.feature.properties;
+							
+							document.getElementById("nom").innerHTML = prop.nom;
+                            document.getElementById("code").innerHTML = prop.code;
+                            document.getElementById("txA").innerHTML = prop.an14trim2;
+                            document.getElementById("txB").innerHTML = prop.an15trim1;
+                            document.getElementById("txC").innerHTML = prop.an15trim2;
+					
+					}
+					
+					
+					function resetHighlight(e) {
+								geojson.resetStyle(e.target);
+								tooltip.style.display = "none";
+								
+								
+					}
+				
+					var popup = L.popup();
+					
+					
+					function zoomToFeature(e) {
+					var prop = e.target.feature.properties;
+					var contenu = texto(e);
+							var layer = e.target;
+						   popup.setLatLng(layer.getBounds().getCenter())
+						  .setContent('<h1> toto </h1>')
+						  .openOn(map);
+					console.log(contenu);
+					}
+					
+					function onEachFeature(feature, layer) {
+							layer.on({
+							mouseover: highlightFeature,
+							mouseout: resetHighlight,
+							click: zoomToFeature
+							});
+
+						}
+
+
+
+
+						
+
+						
+                    // Ajout des départements, avec un remplissage en fonction de la variable an15trim2
+                    geojson = L.geoJson(data, {
+                        // option de style à mettre ici
+                        style: style,
+						onEachFeature: onEachFeature
+						}).addTo(map);
+						
+					
+
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>
