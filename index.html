@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PROJET BI</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style/leaflet.css">
+	<link rel="stylesheet" href="style/style.css">
+    <script src="lib/leaflet.js" ></script>
+    <script src="lib/jquery-2.2.0.min.js"></script>
+    <script src="lib/d3.js"></script>
+    <script src="lib/script.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Titillium+Web:400' rel='stylesheet' type='text/css'>
+   <link rel="stylesheet" href="style/bootstrap.min.css">
+   <link rel="stylesheet" href="style/bootstrap-theme.min.css">
+   <script src="lib/bootstrap.min.js"></script>
+    
+
+</head>
+
+<body>
+   <header class="page-header" >
+	
+      <h1><img src="images/bg.png" height="70" width="100"/> UNION EUROPÉENNE & ENVIRONNEMENT </h1>
+   </header>
+   <div class="col-lg-1"></div>
+   <nav class="col-lg-10">
+      <section class="row">
+         <button class="col-lg-5 menu" onclick="Hide('#container2','#container1')" id="CARTO">CARTOGRAPHIE</button>
+         <button  class="col-lg-5 menu" onclick="Hide('#container1','#container2')" id="TDB">   TABLEAU DE BORD </button>
+         <button  class="col-lg-2 menu" onclick="Help()">  AIDE </button>
+      </section>
+      <section class="row espace">  
+         <button class="col-lg-2 Indic" onclick="SelectionIndic('Dechet_')"  id="D">DECHET</button>          
+         <button class="col-lg-2 Indic" onclick="SelectionIndic('ElectricitePropre_')"  id="E">ENERGIE PROPRE</button>
+         <button class="col-lg-2 Indic" onclick="SelectionIndic('Taxe_')"  id="T" >TAXE</button>         
+         <button class="col-lg-2 Annee" onclick="SelectionAnnee('An2011')" id="2011">2011</button>     
+         <button class="col-lg-2 Annee" onclick="SelectionAnnee('An2012')" id="2012">2012</button>
+         <button class="col-lg-2 Annee" onclick="SelectionAnnee('An2013')" id="2013">2013</button>
+      </section>
+      <div class="row espace"> 
+         <button  class="col-lg-3 Grp" onclick="FiltrerGroupe('reset')" id="reset">Tous les pays</button>
+         <button class="col-lg-3 Grp"  onclick="FiltrerGroupe('GRP6')" id="GRP6">Groupe des 6</button>
+         <button class="col-lg-3 Grp"  onclick="FiltrerGroupe('GRP15')" id="GRP15">Groupe des 15</button>
+         <button  class="col-lg-3 Grp" onclick="FiltrerGroupe('GRP28')" id="GRP28">Groupe des 28</button>
+      </div>
+   </nav>
+   <div class="col-lg-1"></div>
+   <section id="container1" class="container-fluid" >
+      <div class="col-lg-1"></div>
+      <div id="map" style="height: 700px" class="col-lg-5"></div>
+      <div id="help" class="col-lg-5">
+         <h2> Présentation générale</h2>
+         <p> L'ensemble des données numériques sont issues du portail <a href="https://open-data.europa.eu/fr/data">OpenData de l'Union Européene</a>. Quant aux données géographiques, elles sont disponibles sur : <a href="https://github.com/johan/world.geo.json/blob/master/countries.geo.json">Github: Johan </a> et <a href="http://www.geognos.com">Geoognos.com</a> </p>
+         Cette visualisation présente la situation de l'environnement dans l'Union Européenne entre 2011 et 2013 à travers trois indicateurs:<br/>
+            <ul>
+				<li><b>Déchet</b>: Un ratio sur la quantité de déchets ménagers recyclés par rapport à la quantité total de déchets ménagers par pays. <b>Exprimé en %</b> </li> 
+				<li><b>Energie propre</b>: Un ratio entre la production d'électricité à partir d'énergie renouvelable par rapport à la production nationale d'électricité. <b>Exprimé en %</b></li>
+				<li><b>Taxe</b>: L'ensemble des revenues perçus par un Etat via les taxes liées à l'environnement(énergie, pollution, transport). <b> Exprimé en millions d'euros </b></li>
+			</ul>
+         
+            Elle est composée de deux onglets:
+            <ul>
+				<li> <b>Cartographie</b>: Ce premier onglet vous permet de projeter sur une carte interactive un indicateur en fonction d'une année.<br> Deux façons d'afficher des informations (PIB et population) sur un pays: <ul>
+                    <li> En passant la souris sur un pays</li>
+                    <li> En sélectionnant un pays dans la liste</li>
+                    </ul>
+				<li><b>Tableau de bord</b>: Ce deuxième onglet vous permet d'afficher plusieurs graphiques en lien avec la sélection (indicateur et année), avec la possibilité de filtrer par groupe historique de pays depuis la création l'Union Européene<ul>
+            <li>Groupe 6: Les pays fondateurs (1951) - Allemagne, France, Belgique, Italie, Luxembourg, Pays-Bas.</li>
+            <li>Groupe 15: Les pays ayant rejoint l'UE entre 1973 et 1995 -  Royaume-Uni, Irlande, Danemark, Grèce, Espagne, Portugal, Autriche, Suède, Finlande.</li>
+            <li>Groupe 28: Les pays ayant rejoint l'UE après 1995 - Chypre, République tchèque, Estonie, Hongrie, Lettonie, Lituanie, Malte, Pologne, Slovaquie, Slovénie, Bulgarie, Roumanie, Croatie.</li></ul></ul>
+    
+        
+           <b> Pour démarrer la visualisation, veuillez sélectionner un indicateur et une année</b> <h4 style="text-align: right">Bonne exploration.</h4> 
+          <small> Pour revenir sur cette page d'information, cliquez sur le bouton AIDE à partir de l'onglet cartographie.</small>
+    </div>
+      <div id="infobox" style="display:none" class="col-lg-5">
+	  <div class='col-lg-5'id='flagg' style="height:73.64px"></div>
+         <div id="tooltipp">
+					<div class='col-lg-5'><h3><span id='NOM'></span> - <span id='CODE'></span></h3></div>
+                     <div class='row'>
+                     <div id='number' class='col-lg-12'> 
+                     <p><ul><li><span id='C2011'></span></li><li><span id='C2012'></span></li><li><span id='C2013'></span></li></ul></div></div>
+                 <div class ="row" id="EvolutionPopulation"></div>
+				<div class ="row" id="EvolutionPIB"></div>
+		 </div>  
+      </div>
+	  <div id="listepays" class="col-lg-5" style="margin-top:585px; display:none">
+	  <div  class="col-lg-12"><h4>Liste des pays: </h4> </div>
+	  <div class="col-lg-12" id="tableChart"></div> 
+	  </div>
+   </section>
+   
+   <section id="container2" class="container-fluid" style="display: none">
+      <div class="col-lg-1"></div>
+      <section class="row">
+         <div  class="col-lg-5" id="BarChart"></div>
+          <div class="col-lg-5" id="PieChart"></div>
+      </section>
+      <div class="col-lg-1"></div>
+      <section class="row">
+         <div class="col-lg-10"  id="BubbleChart"></div>
+         <div class="col-lg-1"></div>
+      </section>
+   </section>
+ 
+</body>
+</html>
